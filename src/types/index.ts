@@ -79,6 +79,7 @@ export interface LabelData {
   height: number;
   elements: LabelElement[];
   colors: ColorScheme;
+  ingredientsListMode: 'inline' | 'list';
   createdAt: number;
   updatedAt: number;
 }

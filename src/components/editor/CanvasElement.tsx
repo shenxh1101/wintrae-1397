@@ -125,6 +125,7 @@ export default function CanvasElement({ element, scale, canvasWidth, canvasHeigh
           lineHeight: element.lineHeight || 1.5,
           outline: 'none',
           resize: 'none',
+          whiteSpace: 'pre-wrap',
         } as React.CSSProperties,
       };
 
@@ -154,6 +155,7 @@ export default function CanvasElement({ element, scale, canvasWidth, canvasHeigh
               justifyContent: element.textAlign === 'left' ? 'flex-start' : element.textAlign === 'right' ? 'flex-end' : 'center',
               overflow: 'hidden',
               wordBreak: 'break-word',
+              whiteSpace: 'pre-wrap',
               padding: elementHasPlaceholders && isSelected ? '2px 4px' : 0,
               outline: elementHasPlaceholders && isSelected ? '1px dashed #C9B8A8' : 'none',
               borderRadius: '2px',

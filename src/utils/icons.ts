@@ -78,6 +78,10 @@ export function getIconsByCategory(category: string): IconItem[] {
   return iconItems.filter(i => i.category === category);
 }
 
+export function getAllIcons(): IconItem[] {
+  return iconItems;
+}
+
 export function searchIcons(query: string): IconItem[] {
   const lowerQuery = query.toLowerCase();
   return iconItems.filter(i =>

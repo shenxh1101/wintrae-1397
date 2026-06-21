@@ -53,7 +53,7 @@ function createIconElement(
     visible: true,
     iconName,
     iconColor: '#8B7355',
-    strokeWidth: 2,
+    iconStrokeWidth: 2,
     ...options,
   };
 }

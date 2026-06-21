@@ -8,6 +8,7 @@ export interface PlaceholderContext {
   shelfLife: string;
   batchNumber: string;
   allergyWarning: string;
+  ingredientsListMode?: 'inline' | 'list';
 }
 
 export function createPlaceholderContext(labelData: LabelData): PlaceholderContext {
@@ -19,6 +20,7 @@ export function createPlaceholderContext(labelData: LabelData): PlaceholderConte
     shelfLife: labelData.shelfLife || '',
     batchNumber: labelData.batchNumber || '',
     allergyWarning: labelData.allergyWarning || '',
+    ingredientsListMode: labelData.ingredientsListMode || 'inline',
   };
 }
 
@@ -62,7 +64,10 @@ export function replacePlaceholders(text: string, context: PlaceholderContext): 
   result = result.replace(/\{\{皂名\}\}/g, context.name || '皂名');
   result = result.replace(/\{\{重量\}\}/g, context.weight || '');
   result = result.replace(/\{\{净含量\}\}/g, context.weight || '');
-  result = result.replace(/\{\{成分\}\}/g, formatIngredients(context.ingredients));
+  const ingredientsFormatted = context.ingredientsListMode === 'list'
+    ? formatIngredientsMultiline(context.ingredients)
+    : formatIngredients(context.ingredients);
+  result = result.replace(/\{\{成分\}\}/g, ingredientsFormatted);
   result = result.replace(/\{\{成分列表\}\}/g, formatIngredientsMultiline(context.ingredients));
   result = result.replace(/\{\{使用方法\}\}/g, context.usage || '');
   result = result.replace(/\{\{保存期限\}\}/g, context.shelfLife || '');

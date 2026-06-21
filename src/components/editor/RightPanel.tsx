@@ -14,13 +14,17 @@ import {
   ArrowDownToLine,
   MoveUp,
   MoveDown,
+  Layers,
+  AlignLeft,
+  Image as ImageIcon,
+  Hexagon,
 } from 'lucide-react';
 import ColorPicker from '../common/ColorPicker';
 import { useLabelStore } from '@/store/labelStore';
 import { defaultColorSchemes } from '@/utils/colors';
 
 export default function RightPanel() {
-  const [activeTab, setActiveTab] = useState<'element' | 'style' | 'settings'>('element');
+  const [activeTab, setActiveTab] = useState<'element' | 'style' | 'settings' | 'layers'>('element');
   const [expandedSections, setExpandedSections] = useState<string[]>(['text', 'position']);
 
   const currentLabel = useLabelStore((state) => state.currentLabel);
@@ -34,6 +38,8 @@ export default function RightPanel() {
   const moveElementBackward = useLabelStore((state) => state.moveElementBackward);
   const updateColors = useLabelStore((state) => state.updateColors);
   const applyColorScheme = useLabelStore((state) => state.applyColorScheme);
+  const selectElement = useLabelStore((state) => state.selectElement);
+  const updateIngredientsListMode = useLabelStore((state) => state.updateIngredientsListMode);
 
   const selectedElement = currentLabel?.elements.find((el) => el.id === selectedElementId);
 
@@ -54,6 +60,7 @@ export default function RightPanel() {
   const tabs = [
     { id: 'element', label: '属性', icon: Settings },
     { id: 'style', label: '样式', icon: Palette },
+    { id: 'layers', label: '图层', icon: Layers },
     { id: 'settings', label: '全局', icon: Palette },
   ] as const;
 
@@ -345,13 +352,13 @@ export default function RightPanel() {
               <label className="block text-xs text-brown-500 mb-1">线条粗细</label>
               <input
                 type="range"
-                value={selectedElement.strokeWidth || 2}
-                onChange={(e) => updateElement(selectedElement.id, { strokeWidth: parseInt(e.target.value) })}
+                value={selectedElement.iconStrokeWidth || 2}
+                onChange={(e) => updateElement(selectedElement.id, { iconStrokeWidth: parseInt(e.target.value) })}
                 className="w-full"
                 min="1"
                 max="6"
               />
-              <div className="text-xs text-brown-400 text-center">{selectedElement.strokeWidth || 2}px</div>
+              <div className="text-xs text-brown-400 text-center">{selectedElement.iconStrokeWidth || 2}px</div>
             </div>
           </div>
         )}
@@ -467,13 +474,62 @@ export default function RightPanel() {
     return (
       <div className="space-y-6">
         <div className="p-4 bg-cream-50 rounded-xl">
-          <h4 className="font-medium text-brown-700 text-sm mb-2">成分文本预览</h4>
-          <p className="text-xs text-brown-500 leading-relaxed">
-            {currentLabel.ingredients
-              .sort((a, b) => a.order - b.order)
-              .map((ing) => ing.name + (ing.isAllergen ? ' ⚠' : ''))
-              .join('、')}
+          <h4 className="font-medium text-brown-700 text-sm mb-3">成分排版模式</h4>
+          <div className="flex gap-2">
+            <button
+              onClick={() => updateIngredientsListMode('inline')}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors ${
+                currentLabel.ingredientsListMode === 'inline'
+                  ? 'bg-brown-400 text-white'
+                  : 'bg-white border border-brown-200 text-brown-600 hover:border-brown-400'
+              }`}
+            >
+              单行内联
+            </button>
+            <button
+              onClick={() => updateIngredientsListMode('list')}
+              className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors ${
+                currentLabel.ingredientsListMode === 'list'
+                  ? 'bg-brown-400 text-white'
+                  : 'bg-white border border-brown-200 text-brown-600 hover:border-brown-400'
+              }`}
+            >
+              多行列表
+            </button>
+          </div>
+          <p className="text-[11px] text-brown-400 mt-2">
+            {currentLabel.ingredientsListMode === 'inline'
+              ? '成分用顿号分隔，适合圆形贴纸'
+              : '每个成分占一行，带编号和比例，适合说明卡'}
           </p>
+        </div>
+
+        <div className="p-4 bg-cream-50 rounded-xl">
+          <h4 className="font-medium text-brown-700 text-sm mb-2">成分文本预览</h4>
+          {currentLabel.ingredientsListMode === 'inline' ? (
+            <p className="text-xs text-brown-500 leading-relaxed">
+              {currentLabel.ingredients
+                .sort((a, b) => a.order - b.order)
+                .map((ing) => ing.name + (ing.isAllergen ? ' ⚠' : ''))
+                .join('、')}
+            </p>
+          ) : (
+            <div className="text-xs text-brown-500 leading-relaxed space-y-1">
+              {currentLabel.ingredients
+                .sort((a, b) => a.order - b.order)
+                .map((ing, idx) => (
+                  <div key={ing.id} className="flex items-start gap-2">
+                    <span className="text-brown-400 flex-shrink-0">{idx + 1}.</span>
+                    <span className="flex-1">
+                      {ing.isAllergen && '【'}
+                      {ing.name}
+                      {ing.isAllergen && '】'}
+                      {ing.percentage && <span className="text-brown-400 ml-1">{ing.percentage}</span>}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
 
         <div className="space-y-3">
@@ -508,6 +564,120 @@ export default function RightPanel() {
     );
   };
 
+  const renderLayersTab = () => {
+    if (!currentLabel) return null;
+
+    const getElementIcon = (type: string) => {
+      switch (type) {
+        case 'text': return AlignLeft;
+        case 'icon': return ImageIcon;
+        case 'shape': return Hexagon;
+        case 'image': return ImageIcon;
+        default: return Type;
+      }
+    };
+
+    const getElementLabel = (element: any) => {
+      if (element.type === 'text') {
+        const text = element.content || '';
+        return text.length > 10 ? text.slice(0, 10) + '...' : text || '文本';
+      }
+      if (element.type === 'icon') {
+        return element.iconName || '图标';
+      }
+      if (element.type === 'shape') {
+        const shapeNames: Record<string, string> = { rect: '矩形', circle: '圆形', line: '线条' };
+        return shapeNames[element.shapeType || 'rect'] || '形状';
+      }
+      return '元素';
+    };
+
+    const sortedElements = [...currentLabel.elements].sort((a, b) => b.zIndex - a.zIndex);
+
+    return (
+      <div className="space-y-2">
+        {sortedElements.map((element) => {
+          const Icon = getElementIcon(element.type);
+          const isSelected = element.id === selectedElementId;
+          return (
+            <div
+              key={element.id}
+              onClick={() => selectElement(element.id)}
+              className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all group ${
+                isSelected
+                  ? 'bg-brown-100 border border-brown-300'
+                  : 'hover:bg-cream-50 border border-transparent'
+              } ${!element.visible ? 'opacity-50' : ''}`}
+            >
+              <div className={`p-1.5 rounded ${
+                isSelected ? 'bg-brown-200' : 'bg-cream-100'
+              }`}>
+                <Icon size={14} className={isSelected ? 'text-brown-700' : 'text-brown-500'} />
+              </div>
+              <span className={`flex-1 text-sm truncate ${
+                isSelected ? 'text-brown-700 font-medium' : 'text-brown-600'
+              }`}>
+                {getElementLabel(element)}
+              </span>
+              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateElement(element.id, { visible: !element.visible });
+                  }}
+                  className={`p-1 rounded hover:bg-white ${
+                    !element.visible ? 'text-red-500' : 'text-brown-400 hover:text-brown-600'
+                  }`}
+                  title={element.visible ? '隐藏' : '显示'}
+                >
+                  {element.visible ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateElement(element.id, { locked: !element.locked });
+                  }}
+                  className={`p-1 rounded hover:bg-white ${
+                    element.locked ? 'text-amber-600' : 'text-brown-400 hover:text-brown-600'
+                  }`}
+                  title={element.locked ? '解锁' : '锁定'}
+                >
+                  {element.locked ? <Lock size={14} /> : <Unlock size={14} />}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    moveElementForward(element.id);
+                  }}
+                  className="p-1 rounded hover:bg-white text-brown-400 hover:text-brown-600"
+                  title="上移一层"
+                >
+                  <MoveUp size={14} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    moveElementBackward(element.id);
+                  }}
+                  className="p-1 rounded hover:bg-white text-brown-400 hover:text-brown-600"
+                  title="下移一层"
+                >
+                  <MoveDown size={14} />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+        {currentLabel.elements.length === 0 && (
+          <div className="text-center py-8 text-brown-400">
+            <Layers size={32} className="mx-auto mb-2 opacity-50" />
+            <p className="text-sm">暂无图层</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="no-print w-80 border-l border-cream-200 bg-white overflow-y-auto h-full flex flex-col">
       {/* Tabs */}
@@ -538,6 +708,7 @@ export default function RightPanel() {
       <div className="flex-1 p-4 overflow-y-auto">
         {activeTab === 'element' && renderElementTab()}
         {activeTab === 'style' && renderStyleTab()}
+        {activeTab === 'layers' && renderLayersTab()}
         {activeTab === 'settings' && renderSettingsTab()}
       </div>
     </div>

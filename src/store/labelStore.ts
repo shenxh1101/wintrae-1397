@@ -23,6 +23,7 @@ interface LabelStore {
   updateLabelSize: (width: number, height: number) => void;
   updateColors: (colors: Partial<ColorScheme>) => void;
   applyColorScheme: (scheme: ColorScheme) => void;
+  updateIngredientsListMode: (mode: 'inline' | 'list') => void;
   
   addElement: (element: Omit<LabelElement, 'id'>) => void;
   updateElement: (id: string, updates: Partial<LabelElement>) => void;
@@ -92,6 +93,7 @@ function createLabelFromTemplate(templateId: string): LabelData | null {
     height: template.defaultHeight,
     elements: template.defaultElements.map(el => ({ ...el, id: generateId() })),
     colors: { ...template.defaultColors },
+    ingredientsListMode: 'inline',
     createdAt: now,
     updatedAt: now,
   };
@@ -159,6 +161,15 @@ export const useLabelStore = create<LabelStore>((set, get) => ({
     set((state) => ({
       currentLabel: state.currentLabel
         ? { ...state.currentLabel, colors: scheme, updatedAt: Date.now() }
+        : null,
+    }));
+    get().saveToHistory();
+  },
+
+  updateIngredientsListMode: (mode) => {
+    set((state) => ({
+      currentLabel: state.currentLabel
+        ? { ...state.currentLabel, ingredientsListMode: mode, updatedAt: Date.now() }
         : null,
     }));
     get().saveToHistory();
