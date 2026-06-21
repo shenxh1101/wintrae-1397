@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { useLabelStore } from '@/store/labelStore';
 import CanvasElement from './CanvasElement';
@@ -14,6 +14,28 @@ export default function Canvas({ canvasRef }: CanvasProps) {
   const selectElement = useLabelStore((state) => state.selectElement);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateSize = () => {
+      setContainerSize({
+        width: container.clientWidth,
+        height: container.clientHeight,
+      });
+    };
+
+    updateSize();
+
+    const resizeObserver = new ResizeObserver(updateSize);
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -25,12 +47,18 @@ export default function Canvas({ canvasRef }: CanvasProps) {
 
   const { canvasWidth, canvasHeight, scale } = useMemo(() => {
     if (!currentLabel) return { canvasWidth: 0, canvasHeight: 0, scale: 1 };
+    if (containerSize.width === 0 || containerSize.height === 0) {
+      const labelWidthPx = cmToPx(currentLabel.width);
+      const labelHeightPx = cmToPx(currentLabel.height);
+      return {
+        canvasWidth: labelWidthPx,
+        canvasHeight: labelHeightPx,
+        scale: 1,
+      };
+    }
 
-    const container = containerRef.current;
-    if (!container) return { canvasWidth: 0, canvasHeight: 0, scale: 1 };
-
-    const containerWidth = container.clientWidth - 80;
-    const containerHeight = container.clientHeight - 80;
+    const containerWidth = containerSize.width - 80;
+    const containerHeight = containerSize.height - 80;
 
     const labelWidthPx = cmToPx(currentLabel.width);
     const labelHeightPx = cmToPx(currentLabel.height);
@@ -44,7 +72,7 @@ export default function Canvas({ canvasRef }: CanvasProps) {
       canvasHeight: labelHeightPx * scale,
       scale,
     };
-  }, [currentLabel, currentLabel?.width, currentLabel?.height]);
+  }, [currentLabel, currentLabel?.width, currentLabel?.height, containerSize.width, containerSize.height]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, delta } = event;
@@ -56,8 +84,8 @@ export default function Canvas({ canvasRef }: CanvasProps) {
     const deltaXPercent = (delta.x / canvasWidth) * 100;
     const deltaYPercent = (delta.y / canvasHeight) * 100;
 
-    const newX = Math.max(0, Math.min(100 - element.width, element.x + deltaXPercent));
-    const newY = Math.max(0, Math.min(100 - element.height, element.y + deltaYPercent));
+    const newX = Math.max(element.width / 2, Math.min(100 - element.width / 2, element.x + deltaXPercent));
+    const newY = Math.max(element.height / 2, Math.min(100 - element.height / 2, element.y + deltaYPercent));
 
     updateElement(elementId, { x: newX, y: newY });
   };

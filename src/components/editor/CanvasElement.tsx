@@ -41,10 +41,10 @@ export default function CanvasElement({ element, scale, canvasWidth, canvasHeigh
     disabled: element.locked || isEditing,
   });
 
-  const left = (element.x / 100) * canvasWidth;
-  const top = (element.y / 100) * canvasHeight;
   const width = (element.width / 100) * canvasWidth;
   const height = (element.height / 100) * canvasHeight;
+  const left = (element.x / 100) * canvasWidth - width / 2;
+  const top = (element.y / 100) * canvasHeight - height / 2;
 
   const style: React.CSSProperties = {
     position: 'absolute',
@@ -52,16 +52,16 @@ export default function CanvasElement({ element, scale, canvasWidth, canvasHeigh
     top,
     width,
     height,
-    transform: CSS.Translate.toString(transform),
+    transform: `${CSS.Translate.toString(transform)} rotate(${element.rotation}deg)`,
+    transformOrigin: 'center center',
     zIndex: element.zIndex,
     opacity: element.visible ? 1 : 0.5,
     cursor: element.locked ? 'not-allowed' : isDragging ? 'grabbing' : 'grab',
-    transition: isDragging ? 'none' : 'box-shadow 0.15s, transform 0.15s',
+    transition: isDragging ? 'none' : 'box-shadow 0.15s',
   };
 
   if (isDragging) {
     style.opacity = 0.8;
-    style.transform += ' scale(1.02)';
   }
 
   if (isSelected && !isDragging) {

@@ -60,13 +60,13 @@ export function replacePlaceholders(text: string, context: PlaceholderContext): 
   let result = text;
   
   result = result.replace(/\{\{皂名\}\}/g, context.name || '皂名');
-  result = result.replace(/\{\{重量\}\}/g, context.weight ? `净含量：${context.weight}` : '');
+  result = result.replace(/\{\{重量\}\}/g, context.weight || '');
   result = result.replace(/\{\{净含量\}\}/g, context.weight || '');
   result = result.replace(/\{\{成分\}\}/g, formatIngredients(context.ingredients));
   result = result.replace(/\{\{成分列表\}\}/g, formatIngredientsMultiline(context.ingredients));
   result = result.replace(/\{\{使用方法\}\}/g, context.usage || '');
   result = result.replace(/\{\{保存期限\}\}/g, context.shelfLife || '');
-  result = result.replace(/\{\{批次编号\}\}/g, context.batchNumber ? `批次：${context.batchNumber}` : '');
+  result = result.replace(/\{\{批次编号\}\}/g, context.batchNumber || '');
   result = result.replace(/\{\{批次\}\}/g, context.batchNumber || '');
   result = result.replace(/\{\{过敏提示\}\}/g, context.allergyWarning || '');
   result = result.replace(/\{\{过敏原\}\}/g, () => {

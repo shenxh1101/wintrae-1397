@@ -31,10 +31,10 @@ function renderElement(
 ) {
   if (!element.visible) return null;
 
-  const left = (element.x / 100) * canvasWidthPx;
-  const top = (element.y / 100) * canvasHeightPx;
   const width = (element.width / 100) * canvasWidthPx;
   const height = (element.height / 100) * canvasHeightPx;
+  const left = (element.x / 100) * canvasWidthPx - width / 2;
+  const top = (element.y / 100) * canvasHeightPx - height / 2;
 
   const baseStyle: React.CSSProperties = {
     position: 'absolute',
@@ -43,6 +43,7 @@ function renderElement(
     width,
     height,
     transform: `rotate(${element.rotation}deg)`,
+    transformOrigin: 'center center',
     zIndex: element.zIndex,
     display: 'flex',
     alignItems: 'center',
@@ -123,7 +124,6 @@ function renderElement(
             ...baseStyle,
             height: `${(element.strokeWidth || 1) * scale}px`,
             backgroundColor: element.strokeColor || colors.primary,
-            top: `${top + height / 2}px`,
           }}
         />
       );
