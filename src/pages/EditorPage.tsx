@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { useLabelStore } from '@/store/labelStore';
 import Navbar from '@/components/common/Navbar';
@@ -16,14 +16,12 @@ export default function EditorPage() {
 
   useAutoSave(canvasRef);
 
-  useEffect(() => {
-    if (!currentLabel && templateId) {
-      initLabelFromTemplate(templateId);
-    }
-  }, [templateId, currentLabel, initLabelFromTemplate]);
-
   if (!templateId || !getTemplateById(templateId)) {
     return <Navigate to="/" replace />;
+  }
+
+  if (!currentLabel || currentLabel.templateId !== templateId) {
+    initLabelFromTemplate(templateId);
   }
 
   return (

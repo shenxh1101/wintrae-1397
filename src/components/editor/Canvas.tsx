@@ -84,8 +84,8 @@ export default function Canvas({ canvasRef }: CanvasProps) {
     const deltaXPercent = (delta.x / canvasWidth) * 100;
     const deltaYPercent = (delta.y / canvasHeight) * 100;
 
-    const newX = Math.max(element.width / 2, Math.min(100 - element.width / 2, element.x + deltaXPercent));
-    const newY = Math.max(element.height / 2, Math.min(100 - element.height / 2, element.y + deltaYPercent));
+    const newX = Math.max(0, Math.min(100 - element.width, element.x + deltaXPercent));
+    const newY = Math.max(0, Math.min(100 - element.height, element.y + deltaYPercent));
 
     updateElement(elementId, { x: newX, y: newY });
   };
@@ -96,8 +96,11 @@ export default function Canvas({ canvasRef }: CanvasProps) {
 
   if (!currentLabel) {
     return (
-      <div className="flex items-center justify-center h-full text-brown-400">
-        请选择一个模板开始设计
+      <div className="flex items-center justify-center h-full">
+        <div className="animate-pulse flex flex-col items-center gap-3">
+          <div className="w-48 h-48 rounded-2xl bg-cream-200" />
+          <div className="text-sm text-brown-400">正在加载模板...</div>
+        </div>
       </div>
     );
   }

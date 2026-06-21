@@ -38,13 +38,17 @@ export default function CanvasElement({ element, scale, canvasWidth, canvasHeigh
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: element.id,
-    disabled: element.locked || isEditing,
+    disabled: element.locked || isEditing || !element.visible,
   });
 
+  const left = (element.x / 100) * canvasWidth;
+  const top = (element.y / 100) * canvasHeight;
   const width = (element.width / 100) * canvasWidth;
   const height = (element.height / 100) * canvasHeight;
-  const left = (element.x / 100) * canvasWidth - width / 2;
-  const top = (element.y / 100) * canvasHeight - height / 2;
+
+  if (!element.visible) {
+    return null;
+  }
 
   const style: React.CSSProperties = {
     position: 'absolute',
@@ -55,7 +59,6 @@ export default function CanvasElement({ element, scale, canvasWidth, canvasHeigh
     transform: `${CSS.Translate.toString(transform)} rotate(${element.rotation}deg)`,
     transformOrigin: 'center center',
     zIndex: element.zIndex,
-    opacity: element.visible ? 1 : 0.5,
     cursor: element.locked ? 'not-allowed' : isDragging ? 'grabbing' : 'grab',
     transition: isDragging ? 'none' : 'box-shadow 0.15s',
   };

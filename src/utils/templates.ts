@@ -3,8 +3,8 @@ import { generateId } from './units';
 
 function createTextElement(
   content: string,
-  x: number,
-  y: number,
+  centerX: number,
+  centerY: number,
   width: number,
   height: number,
   options: Partial<LabelElement> = {}
@@ -12,8 +12,8 @@ function createTextElement(
   return {
     id: generateId(),
     type: 'text',
-    x,
-    y,
+    x: centerX - width / 2,
+    y: centerY - height / 2,
     width,
     height,
     rotation: 0,
@@ -34,8 +34,8 @@ function createTextElement(
 
 function createIconElement(
   iconName: string,
-  x: number,
-  y: number,
+  centerX: number,
+  centerY: number,
   width: number,
   height: number,
   options: Partial<LabelElement> = {}
@@ -43,8 +43,8 @@ function createIconElement(
   return {
     id: generateId(),
     type: 'icon',
-    x,
-    y,
+    x: centerX - width / 2,
+    y: centerY - height / 2,
     width,
     height,
     rotation: 0,

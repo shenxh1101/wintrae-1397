@@ -31,10 +31,10 @@ function renderElement(
 ) {
   if (!element.visible) return null;
 
+  const left = (element.x / 100) * canvasWidthPx;
+  const top = (element.y / 100) * canvasHeightPx;
   const width = (element.width / 100) * canvasWidthPx;
   const height = (element.height / 100) * canvasHeightPx;
-  const left = (element.x / 100) * canvasWidthPx - width / 2;
-  const top = (element.y / 100) * canvasHeightPx - height / 2;
 
   const baseStyle: React.CSSProperties = {
     position: 'absolute',
@@ -48,6 +48,7 @@ function renderElement(
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   };
 
   if (element.type === 'text') {
@@ -66,7 +67,9 @@ function renderElement(
           lineHeight: element.lineHeight || 1.5,
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
-          overflow: 'hidden',
+          justifyContent: element.textAlign === 'left' ? 'flex-start' : element.textAlign === 'right' ? 'flex-end' : 'center',
+          padding: '0 2px',
+          boxSizing: 'border-box',
         }}
       >
         {displayText}
@@ -77,7 +80,7 @@ function renderElement(
   if (element.type === 'icon') {
     const IconComponent = (Icons as unknown as Record<string, React.FC<{ size?: number; color?: string; strokeWidth?: number }>>)[element.iconName || 'Leaf'];
     return (
-      <div key={element.id} style={baseStyle}>
+      <div key={element.id} style={{ ...baseStyle, overflow: 'visible' }}>
         {IconComponent && (
           <IconComponent
             size={Math.min(width, height) * 0.8}
@@ -99,6 +102,7 @@ function renderElement(
             backgroundColor: element.fillColor || 'transparent',
             border: element.strokeWidth ? `${element.strokeWidth * scale}px solid ${element.strokeColor || colors.primary}` : 'none',
             borderRadius: '50%',
+            overflow: 'visible',
           }}
         />
       );
@@ -112,6 +116,7 @@ function renderElement(
             backgroundColor: element.fillColor || 'transparent',
             border: element.strokeWidth ? `${element.strokeWidth * scale}px solid ${element.strokeColor || colors.primary}` : 'none',
             borderRadius: `${(element.borderRadius || 0) * scale}px`,
+            overflow: 'visible',
           }}
         />
       );
@@ -122,8 +127,10 @@ function renderElement(
           key={element.id}
           style={{
             ...baseStyle,
-            height: `${(element.strokeWidth || 1) * scale}px`,
+            height: `${Math.max(1, (element.strokeWidth || 1) * scale)}px`,
             backgroundColor: element.strokeColor || colors.primary,
+            top: `${top + height / 2 - Math.max(1, (element.strokeWidth || 1) * scale) / 2}px`,
+            overflow: 'visible',
           }}
         />
       );
