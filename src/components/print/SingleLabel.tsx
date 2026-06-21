@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { LabelData, LabelElement } from '@/types';
 import { cmToPx } from '@/utils/units';
 import * as Icons from 'lucide-react';
+import { replacePlaceholders, createPlaceholderContext } from '@/utils/placeholders';
 
 interface SingleLabelProps {
   labelData: LabelData;
@@ -9,15 +10,38 @@ interface SingleLabelProps {
   showBorder?: boolean;
 }
 
-function renderElement(element: LabelElement, colors: LabelData['colors'], scale: number) {
+function getFontFamily(fontFamily?: string): string {
+  switch (fontFamily) {
+    case 'serif':
+      return '"Noto Serif SC", Georgia, serif';
+    case 'handwritten':
+      return '"Ma Shan Zheng", cursive';
+    default:
+      return '"Noto Sans SC", system-ui, sans-serif';
+  }
+}
+
+function renderElement(
+  element: LabelElement,
+  colors: LabelData['colors'],
+  scale: number,
+  canvasWidthPx: number,
+  canvasHeightPx: number,
+  placeholderContext: ReturnType<typeof createPlaceholderContext>
+) {
   if (!element.visible) return null;
+
+  const left = (element.x / 100) * canvasWidthPx;
+  const top = (element.y / 100) * canvasHeightPx;
+  const width = (element.width / 100) * canvasWidthPx;
+  const height = (element.height / 100) * canvasHeightPx;
 
   const baseStyle: React.CSSProperties = {
     position: 'absolute',
-    left: `${cmToPx(element.x) * scale}px`,
-    top: `${cmToPx(element.y) * scale}px`,
-    width: `${cmToPx(element.width) * scale}px`,
-    height: `${cmToPx(element.height) * scale}px`,
+    left,
+    top,
+    width,
+    height,
     transform: `rotate(${element.rotation}deg)`,
     zIndex: element.zIndex,
     display: 'flex',
@@ -26,13 +50,14 @@ function renderElement(element: LabelElement, colors: LabelData['colors'], scale
   };
 
   if (element.type === 'text') {
+    const displayText = replacePlaceholders(element.content || '', placeholderContext);
     return (
       <div
         key={element.id}
         style={{
           ...baseStyle,
           fontSize: `${(element.fontSize || 12) * scale}px`,
-          fontFamily: element.fontFamily || 'Noto Sans SC',
+          fontFamily: getFontFamily(element.fontFamily),
           fontWeight: element.fontWeight || 400,
           fontStyle: element.fontStyle || 'normal',
           textAlign: element.textAlign || 'center',
@@ -40,25 +65,25 @@ function renderElement(element: LabelElement, colors: LabelData['colors'], scale
           lineHeight: element.lineHeight || 1.5,
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
+          overflow: 'hidden',
         }}
       >
-        {element.content}
+        {displayText}
       </div>
     );
   }
 
   if (element.type === 'icon') {
-    const IconComponent = (Icons as any)[element.iconName || 'HelpCircle'] || Icons.HelpCircle;
+    const IconComponent = (Icons as unknown as Record<string, React.FC<{ size?: number; color?: string; strokeWidth?: number }>>)[element.iconName || 'Leaf'];
     return (
       <div key={element.id} style={baseStyle}>
-        <IconComponent
-          style={{
-            width: '100%',
-            height: '100%',
-            color: element.iconColor || colors.primary,
-            strokeWidth: element.strokeWidth || 2,
-          }}
-        />
+        {IconComponent && (
+          <IconComponent
+            size={Math.min(width, height) * 0.8}
+            color={element.iconColor || colors.primary}
+            strokeWidth={element.iconStrokeWidth || 2}
+          />
+        )}
       </div>
     );
   }
@@ -98,7 +123,7 @@ function renderElement(element: LabelElement, colors: LabelData['colors'], scale
             ...baseStyle,
             height: `${(element.strokeWidth || 1) * scale}px`,
             backgroundColor: element.strokeColor || colors.primary,
-            top: `${cmToPx(element.y + element.height / 2) * scale}px`,
+            top: `${top + height / 2}px`,
           }}
         />
       );
@@ -126,17 +151,21 @@ function renderElement(element: LabelElement, colors: LabelData['colors'], scale
 }
 
 export default function SingleLabel({ labelData, scale = 1, showBorder = false }: SingleLabelProps) {
-  const widthPx = cmToPx(labelData.width) * scale;
-  const heightPx = cmToPx(labelData.height) * scale;
+  const canvasWidthPx = cmToPx(labelData.width) * scale;
+  const canvasHeightPx = cmToPx(labelData.height) * scale;
 
   const isCircle = labelData.templateId.includes('circle') || labelData.templateId.includes('round');
+
+  const placeholderContext = useMemo(() => {
+    return createPlaceholderContext(labelData);
+  }, [labelData]);
 
   return (
     <div
       className="relative"
       style={{
-        width: `${widthPx}px`,
-        height: `${heightPx}px`,
+        width: `${canvasWidthPx}px`,
+        height: `${canvasHeightPx}px`,
         backgroundColor: labelData.colors.background,
         borderRadius: isCircle ? '50%' : '4px',
         overflow: 'hidden',
@@ -145,7 +174,7 @@ export default function SingleLabel({ labelData, scale = 1, showBorder = false }
     >
       {labelData.elements
         .sort((a, b) => a.zIndex - b.zIndex)
-        .map((element) => renderElement(element, labelData.colors, scale))}
+        .map((element) => renderElement(element, labelData.colors, scale, canvasWidthPx, canvasHeightPx, placeholderContext))}
     </div>
   );
 }

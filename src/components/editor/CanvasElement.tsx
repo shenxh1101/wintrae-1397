@@ -1,9 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import * as LucideIcons from 'lucide-react';
 import type { LabelElement } from '@/types';
 import { useLabelStore } from '@/store/labelStore';
+import { replacePlaceholders, createPlaceholderContext, hasPlaceholders } from '@/utils/placeholders';
 
 interface CanvasElementProps {
   element: LabelElement;
@@ -16,12 +17,24 @@ export default function CanvasElement({ element, scale, canvasWidth, canvasHeigh
   const selectedElementId = useLabelStore((state) => state.selectedElementId);
   const selectElement = useLabelStore((state) => state.selectElement);
   const updateElement = useLabelStore((state) => state.updateElement);
+  const currentLabel = useLabelStore((state) => state.currentLabel);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(element.content || '');
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
 
   const isSelected = selectedElementId === element.id;
   const elementRef = useRef<HTMLDivElement>(null);
+
+  const displayedText = useMemo(() => {
+    if (element.type !== 'text') return element.content;
+    if (!currentLabel) return element.content;
+    const context = createPlaceholderContext(currentLabel);
+    return replacePlaceholders(element.content || '', context);
+  }, [element.content, element.type, currentLabel]);
+
+  const elementHasPlaceholders = useMemo(() => {
+    return element.type === 'text' && hasPlaceholders(element.content || '');
+  }, [element.content, element.type]);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: element.id,
@@ -138,9 +151,12 @@ export default function CanvasElement({ element, scale, canvasWidth, canvasHeigh
               justifyContent: element.textAlign === 'left' ? 'flex-start' : element.textAlign === 'right' ? 'flex-end' : 'center',
               overflow: 'hidden',
               wordBreak: 'break-word',
+              padding: elementHasPlaceholders && isSelected ? '2px 4px' : 0,
+              outline: elementHasPlaceholders && isSelected ? '1px dashed #C9B8A8' : 'none',
+              borderRadius: '2px',
             }}
           >
-            {element.content}
+            {displayedText}
           </div>
         );
 
